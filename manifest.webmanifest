@@ -26,5 +26,21 @@
    "type": "image/png",
    "purpose": "any maskable"
   }
+ ],
+ "screenshots": [
+  {
+   "src": "shot-1.png",
+   "sizes": "1179x1980",
+   "type": "image/png",
+   "form_factor": "narrow",
+   "label": "Balance and categories"
+  },
+  {
+   "src": "shot-2.png",
+   "sizes": "1179x1980",
+   "type": "image/png",
+   "form_factor": "narrow",
+   "label": "Expense categories"
+  }
  ]
 }

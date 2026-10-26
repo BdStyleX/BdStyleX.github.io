@@ -1,0 +1,43 @@
+PLAY STORE LISTING: copy and paste into Play Console
+
+APP NAME (max 30):
+Hisab Khata: Expense Tracker
+
+SHORT DESCRIPTION (max 80):
+Track income, expenses and savings by category. Made for expats.
+
+FULL DESCRIPTION:
+Hisab Khata is a simple income and expense tracker made for people living abroad.
+
+Write down every amount with its reason, see your total balance at a glance, and check a month-by-month summary. Every category (rent, food, salary, overtime, money sent home and more) has its own dashboard with totals, monthly average, a 6-month chart and the full list of entries.
+
+Features
+- Total balance, monthly income and monthly expenses
+- A separate dashboard for each category
+- Works in English, Bangla, Arabic, Hindi and Malay
+- 14 currencies, including BDT, SAR, AED, QAR, KWD, OMR, MYR, SGD, USD, GBP, EUR, INR
+- Save and restore a backup file
+- Light and dark mode, works offline
+
+Your data stays on your phone. No ads.
+
+CATEGORY: Finance
+TAGS: Finance / Expense tracker
+CONTACT EMAIL: (your email)
+PRIVACY POLICY URL: https://bdstylex.github.io/privacy.html
+
+BANGLA SHORT DESCRIPTION:
+প্রবাসীদের আয়, খরচ আর সঞ্চয়ের সহজ হিসাব খাতা।
+
+DATA SAFETY FORM (for the version with Firebase login; answer to match what the app really does):
+- Data collected: Personal info (name, email address); Financial info (user-entered income and expense entries, i.e. "Other financial info").
+- Collected and linked to the user: Yes. Shared with third parties: No (Google Firebase only processes it for us).
+- Purpose: App functionality and account management. Not used for ads or analytics.
+- Encrypted in transit: Yes.
+- Users can request deletion: Yes. In the app: Delete account. On the web: the privacy page (email contact).
+- Ads: No. In-app purchases: No.
+- Account deletion URL: https://bdstylex.github.io/privacy.html
+
+CONTENT RATING: answer the questionnaire honestly. No violence, no gambling, no user-generated public content.
+TARGET AUDIENCE: 18 and over.
+SCREENSHOTS: at least 2 phone screenshots. Play wants the long side to be at most 2x the short side, and iPhone screenshots are slightly longer than that, so crop them.
