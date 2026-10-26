@@ -118,6 +118,7 @@ h2::before{background:linear-gradient(180deg,#F5B942,#EF4F6C)}
 .grid>.gc:nth-child(8n+3) .ic{background:rgba(245,185,66,.24)}.grid>.gc:nth-child(8n+4) .ic{background:rgba(239,79,108,.16)}
 .grid>.gc:nth-child(8n+5) .ic{background:rgba(56,170,235,.18)}.grid>.gc:nth-child(8n+6) .ic{background:rgba(150,100,240,.18)}
 .grid>.gc:nth-child(8n+7) .ic{background:rgba(255,140,80,.2)}.grid>.gc:nth-child(8n) .ic{background:rgba(120,140,170,.22)}
+.bk{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:22px}.bk .out{margin:0}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#2B3A8F"><link rel="apple-touch-icon" href="icon-192.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Hisab Khata">
 </head>
@@ -164,6 +165,7 @@ h2::before{background:linear-gradient(180deg,#F5B942,#EF4F6C)}
   <div class="grid" id="icats"></div>
   <h2>লেনদেনের তালিকা</h2>
   <div class="card" id="list"></div>
+  <div class="bk"><button class="out" id="bx">ব্যাকআপ সেভ করুন</button><button class="out" id="bi">ব্যাকআপ থেকে ফেরত আনুন</button><input type="file" id="bf" accept=".json,application/json" hidden></div>
   <button class="out" id="lo">লগআউট</button>
 </div>
 <button class="fab" id="add">+ নতুন হিসাব</button>
@@ -341,6 +343,11 @@ const D0={
 'এই খাতে এখনো কোনো লেনদেন নেই':['No entries in this category yet','لا توجد معاملات في هذه الفئة بعد','इस श्रेणी में अभी कोई लेन-देन नहीं','Belum ada transaksi dalam kategori ini'],
 '{m} মাসে':['In {m}','في {m}','{m} में','Pada {m}'],
 '{n} টি':['{n} entries','{n} معاملة','{n} प्रविष्टियाँ','{n} catatan'],
+'ব্যাকআপ সেভ করুন':['Save backup','حفظ نسخة احتياطية','बैकअप सेव करें','Simpan sandaran'],
+'ব্যাকআপ থেকে ফেরত আনুন':['Restore backup','استعادة نسخة احتياطية','बैकअप से वापस लाएँ','Pulihkan sandaran'],
+'বর্তমান হিসাব মুছে ব্যাকআপ থেকে ফেরত আনবেন?':['Replace current data with this backup?','هل تريد استبدال البيانات الحالية بهذه النسخة؟','मौजूदा डेटा हटाकर इस बैकअप से बदलें?','Gantikan data semasa dengan sandaran ini?'],
+'ব্যাকআপ ফেরত এসেছে।':['Backup restored.','تمت استعادة النسخة.','बैकअप वापस आ गया।','Sandaran dipulihkan.'],
+'ফাইলটি সঠিক ব্যাকআপ নয়।':['This is not a valid backup file.','هذا الملف ليس نسخة احتياطية صالحة.','यह सही बैकअप फ़ाइल नहीं है।','Ini bukan fail sandaran yang sah.'],
 'হ্যালো, {n}':['Hello, {n}','مرحبًا، {n}','नमस्ते, {n}','Hai, {n}'],
 'খাবার':['Food','الطعام','खाना','Makanan'],
 'বাসা ভাড়া':['Rent','إيجار السكن','मकान किराया','Sewa rumah'],
@@ -386,6 +393,17 @@ function setLang(l){
   $('lang').value=$('lang2').value=l;
   tr(document.body);render();hello();
   if($('dov').classList.contains('on'))dash(dc.ty,dc.c)}
+$('bx').onclick=async()=>{const n='hisab-backup-'+new Date().toISOString().slice(0,10)+'.json',f=new File([JSON.stringify({v:1,tx:S.tx,cur:S.cur})],n,{type:'application/json'});
+  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return}}catch(e){if(e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=n;document.body.appendChild(a);a.click();a.remove()};
+$('bi').onclick=()=>$('bf').click();
+$('bf').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+  try{const d=JSON.parse(await f.text()),ok=[...CATS.expense,...CATS.income];if(!Array.isArray(d.tx))throw 0;
+    if(!confirm(T('বর্তমান হিসাব মুছে ব্যাকআপ থেকে ফেরত আনবেন?')))return;
+    S.tx=d.tx.filter(t=>t&&t.amt>0&&(t.type==='income'||t.type==='expense')&&ok.includes(t.cat)&&/^\d{4}-\d{2}-\d{2}$/.test(t.date)).map((t,i)=>({id:Date.now()+i,type:t.type,amt:+t.amt,cat:t.cat,note:String(t.note||'').slice(0,80),date:t.date}));
+    if(CUR.some(x=>x[0]===d.cur))S.cur=d.cur;
+    save();render();alert(T('ব্যাকআপ ফেরত এসেছে।'))}catch(x){alert(T('ফাইলটি সঠিক ব্যাকআপ নয়।'))}
+  e.target.value=''};
 let sl=null;try{sl=localStorage.getItem('hisab_lg')}catch(e){}
 setLang(LANGS.some(x=>x[0]===sl)?sl:'en');
 </script>
