@@ -192,7 +192,7 @@ h2::before{background:linear-gradient(180deg,#F5B942,#EF4F6C)}
 
 <script>
 const CATS={expense:["খাবার","বাসা ভাড়া","যাতায়াত","দেশে টাকা পাঠানো","মোবাইল ও ইন্টারনেট","চিকিৎসা","কেনাকাটা","অন্যান্য"],
-income:["বেতন","ওভারটাইম","বোনাস","ব্যবসা","উপহার","অন্যান্য"]};
+income:["বেতন","ওভারটাইম","বোনাস","ব্যবসা","উপহার","অন্যান্য","শুরুর ব্যালেন্স"]};
 const MN=["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
 const $=id=>document.getElementById(id);
 let S={tx:[],cur:"৳"},view=new Date(),type="expense";
@@ -207,7 +207,7 @@ function render(){
   $("mlabel").textContent=MN[view.getMonth()]+" "+new Intl.NumberFormat(LOC,{useGrouping:false}).format(view.getFullYear());
   const k=ym(view),mt=S.tx.filter(t=>t.date.startsWith(k)).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
   const sum=(a,t)=>a.filter(x=>x.type===t).reduce((s,x)=>s+x.amt,0);
-  const inc=sum(mt,"income"),exp=sum(mt,"expense");
+  const OB="শুরুর ব্যালেন্স",inc=sum(mt.filter(t=>t.cat!==OB),"income"),exp=sum(mt,"expense");
   $("bal").textContent=money(sum(S.tx,"income")-sum(S.tx,"expense"));
   $("inc").textContent=money(inc);$("exp").textContent=money(exp);
   const by={};mt.filter(t=>t.type==="expense").forEach(t=>by[t.cat]=(by[t.cat]||0)+t.amt);
@@ -221,7 +221,7 @@ function render(){
 function setType(t){type=t;$("tE").className=t==="expense"?"on expense":"expense";$("tI").className=t==="income"?"on income":"income";
   $("catSel").innerHTML=CATS[t].map(c=>`<option value="${c}">${c}</option>`).join("")}
 $("tE").onclick=()=>setType("expense");$("tI").onclick=()=>setType("income");
-function openAdd(ty,c){setType(ty||"expense");if(c)$("catSel").value=c;$("amount").value="";$("note").value="";$("err").textContent="";$("date").value=new Date().toISOString().slice(0,10);$("ov").classList.add("on");setTimeout(()=>$("amount").focus(),50)};
+function openAdd(ty,c){setType(ty||"expense");if(c)$("catSel").value=c;$("amount").value="";$("note").value="";$("err").textContent="";$("date").value=(d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"))(new Date());$("ov").classList.add("on");setTimeout(()=>$("amount").focus(),50)};
 const shut=()=>$("ov").classList.remove("on");
 $("close").onclick=shut;$("ov").onclick=e=>{if(e.target.id==="ov")shut()};
 $("save").onclick=()=>{
@@ -364,7 +364,7 @@ const D0={
 'উপহার':['Gift','هدية','उपहार','Hadiah']};
 const nz=s=>s.normalize('NFC'),D={};Object.entries(D0).forEach(([k,v])=>D[nz(k)]=v);
 let lang='bn';
-const T=(k,v)=>{let s=lang==='bn'?k:(D[nz(k)]||[])[LANGS.findIndex(x=>x[0]===lang)-1]||k;if(v)for(const x in v)s=s.replace('{'+x+'}',()=>v[x]);return s};
+const T=(k,v)=>{let s=lang==='bn'?k:(D[nz(k)]||[])[LANGS.findIndex(x=>x[0]===lang)-1]||(D[nz(k)]||[])[0]||k;if(v)for(const x in v)s=s.replace('{'+x+'}',()=>v[x]);return s};
 const OT=new WeakMap();
 function trN(n){const o=OT.has(n)?OT.get(n):n.nodeValue,t=o.trim(),k=nz(t);if(!D[k]&&!OT.has(n))return;OT.set(n,o);const r=lang==='bn'?o:o.replace(t,()=>T(k));if(n.nodeValue!==r)n.nodeValue=r}
 function tr(r){
@@ -400,13 +400,141 @@ $('bi').onclick=()=>$('bf').click();
 $('bf').onchange=async e=>{const f=e.target.files[0];if(!f)return;
   try{const d=JSON.parse(await f.text()),ok=[...CATS.expense,...CATS.income];if(!Array.isArray(d.tx))throw 0;
     if(!confirm(T('বর্তমান হিসাব মুছে ব্যাকআপ থেকে ফেরত আনবেন?')))return;
-    S.tx=d.tx.filter(t=>t&&t.amt>0&&(t.type==='income'||t.type==='expense')&&ok.includes(t.cat)&&/^\d{4}-\d{2}-\d{2}$/.test(t.date)).map((t,i)=>({id:Date.now()+i,type:t.type,amt:+t.amt,cat:t.cat,note:String(t.note||'').slice(0,80),date:t.date}));
+    S.tx=d.tx.filter(t=>t&&t.amt>0&&(t.type==='income'||t.type==='expense')&&cn(t.cat)&&/^\d{4}-\d{2}-\d{2}$/.test(t.date)).map((t,i)=>({id:Date.now()+i,type:t.type,amt:+t.amt,cat:useCat(t.type,t.cat),note:String(t.note||'').slice(0,80),date:t.date}));
     if(CUR.some(x=>x[0]===d.cur))S.cur=d.cur;
     save();render();alert(T('ব্যাকআপ ফেরত এসেছে।'))}catch(x){alert(T('ফাইলটি সঠিক ব্যাকআপ নয়।'))}
   e.target.value=''};
+// ---- custom categories + opening balance
+const BL={expense:CATS.expense.length,income:CATS.income.length};
+const cn=s=>String(s||'').replace(/[<>&"'`\\]/g,'').replace(/\s+/g,' ').trim().slice(0,24);
+S.cx=S.cx||{expense:[],income:[]};
+function useCat(ty,n){n=cn(n);if(!n)return null;if(!CATS[ty].includes(n))CATS[ty].push(n);if(CATS[ty].indexOf(n)>=BL[ty]&&!S.cx[ty].includes(n))S.cx[ty].push(n);return n}
+['expense','income'].forEach(ty=>S.cx[ty].slice().forEach(n=>useCat(ty,n)));
+IC['শুরুর ব্যালেন্স']='🏦';
+Object.entries({
+'শুরুর ব্যালেন্স':['Opening balance','الرصيد الافتتاحي','शुरुआती बैलेंस','Baki permulaan'],
+'+ নতুন খাত যোগ করুন':['+ Add new category','+ إضافة فئة جديدة','+ नई श्रेणी जोड़ें','+ Tambah kategori baharu'],
+'খাতের নাম':['Category name','اسم الفئة','श्रेणी का नाम','Nama kategori'],
+'যোগ করুন':['Add','إضافة','जोड़ें','Tambah'],
+'খাতটি মুছুন':['Remove this category','حذف هذه الفئة','यह श्रेणी हटाएँ','Padam kategori ini']
+}).forEach(([k,v])=>D[nz(k)]=v);
+const ac=document.createElement('button');ac.type='button';ac.className='out';ac.style.cssText='margin:8px 0 0;padding:6px 14px;font-size:14px';ac.textContent='+ নতুন খাত যোগ করুন';
+const nr=document.createElement('div');nr.style.cssText='display:none;gap:8px;margin-top:8px';
+nr.innerHTML='<input class="f" id="ncat" maxlength="24" placeholder="খাতের নাম" style="flex:1"><button type="button" class="out" id="ncb" style="margin:0;padding:6px 14px">যোগ করুন</button>';
+$('catSel').after(ac,nr);
+ac.onclick=()=>{nr.style.display='flex';$('ncat').focus()};
+$('ncb').onclick=()=>{const n=useCat(type,$('ncat').value);if(!n)return;save();setType(type);$('catSel').value=n;$('ncat').value='';nr.style.display='none'};
+const _oa=openAdd;openAdd=function(a,b){_oa(a,b);nr.style.display='none'};
+$('catSel').onchange=()=>{if($('catSel').value==='শুরুর ব্যালেন্স'){const d=new Date();d.setDate(0);$('date').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}};
+const _d2=dash;dash=function(ty,c){_d2(ty,c);
+  if(CATS[ty].indexOf(c)>=BL[ty]&&!S.tx.some(t=>t.type===ty&&t.cat===c)){const b=document.createElement('button');b.className='out';b.textContent='খাতটি মুছুন';
+    b.onclick=()=>{CATS[ty].splice(CATS[ty].indexOf(c),1);S.cx[ty]=S.cx[ty].filter(x=>x!==c);save();$('dov').classList.remove('on');render()};$('dbody').appendChild(b)}};
+
 let sl=null;try{sl=localStorage.getItem('hisab_lg')}catch(e){}
 setLang(LANGS.some(x=>x[0]===sl)?sl:'en');
 </script>
 <script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))</script>
+<script src="firebase-config.js"></script>
+<script type="module">
+(async()=>{
+const cfg=window.FIREBASE_CONFIG;
+if(!cfg||!cfg.apiKey||/PASTE|YOUR/i.test(cfg.apiKey))return;
+const B='https://www.gstatic.com/firebasejs/10.12.2/';
+let A,Au,F;
+try{[A,Au,F]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')])}catch(e){return}
+const app=A.initializeApp(cfg),auth=Au.getAuth(app),db=F.initializeFirestore(app,{experimentalAutoDetectLongPolling:true});
+const add=o=>Object.entries(o).forEach(([k,v])=>D[nz(k)]=v);
+add({
+'ইমেইল':['Email','البريد الإلكتروني','ईमेल','E-mel'],
+'পাসওয়ার্ড ভুলে গেছেন?':['Forgot password?','نسيت كلمة المرور؟','पासवर्ड भूल गए?','Lupa kata laluan?'],
+'পাসওয়ার্ড রিসেটের ইমেইল পাঠানো হয়েছে। ইনবক্স (স্প্যামসহ) দেখুন।':['Password reset email sent. Check your inbox (and spam).','تم إرسال رسالة إعادة التعيين. تحقق من بريدك (والرسائل غير المرغوبة).','पासवर्ड रीसेट ईमेल भेज दिया गया है। इनबॉक्स (स्पैम सहित) देखें।','E-mel tetapan semula dihantar. Semak peti masuk (termasuk spam).'],
+'প্রথমে উপরের ঘরে আপনার ইমেইল লিখুন।':['First enter your email above.','أدخل بريدك الإلكتروني أعلاه أولًا.','पहले ऊपर अपना ईमेल लिखें।','Masukkan e-mel anda di atas dahulu.'],
+'সঠিক ইমেইল ঠিকানা দিন।':['Enter a valid email address.','أدخل عنوان بريد إلكتروني صحيحًا.','सही ईमेल पता दें।','Masukkan alamat e-mel yang sah.'],
+'ইমেইল বা পাসওয়ার্ড ভুল।':['Wrong email or password.','البريد الإلكتروني أو كلمة المرور غير صحيحة.','ईमेल या पासवर्ड गलत है।','E-mel atau kata laluan salah.'],
+'এই ইমেইলে আগেই অ্যাকাউন্ট আছে। লগইন করুন।':['An account with this email already exists. Please log in.','يوجد حساب بهذا البريد بالفعل. سجّل الدخول.','इस ईमेल से खाता पहले से है। लॉग इन करें।','Akaun dengan e-mel ini sudah wujud. Sila log masuk.'],
+'পাসওয়ার্ড খুব সহজ। কমপক্ষে ৬ অক্ষর দিন।':['Password is too weak. Use at least 6 characters.','كلمة المرور ضعيفة. استخدم 6 أحرف على الأقل.','पासवर्ड बहुत कमज़ोर है। कम से कम 6 अक्षर रखें।','Kata laluan terlalu lemah. Guna sekurang-kurangnya 6 aksara.'],
+'ইন্টারনেট নেই বা দুর্বল। আবার চেষ্টা করুন।':['No or weak internet. Please try again.','لا يوجد اتصال أو الاتصال ضعيف. حاول مرة أخرى.','इंटरनेट नहीं है या कमज़ोर है। फिर कोशिश करें।','Tiada atau lemah internet. Cuba lagi.'],
+'অনেকবার চেষ্টা হয়েছে। কিছুক্ষণ পরে আবার চেষ্টা করুন।':['Too many attempts. Please try again later.','محاولات كثيرة. حاول لاحقًا.','बहुत ज़्यादा कोशिशें हुईं। बाद में फिर कोशिश करें।','Terlalu banyak percubaan. Cuba lagi nanti.'],
+'কিছু ভুল হয়েছে। একটু পরে আবার চেষ্টা করুন।':['Something went wrong. Please try again later.','حدث خطأ ما. حاول لاحقًا.','कुछ गड़बड़ हो गई। थोड़ी देर बाद फिर कोशिश करें।','Ada masalah. Cuba lagi nanti.'],
+'আপনার অ্যাকাউন্টে সেভ হয়েছে':['Saved to your account','تم الحفظ في حسابك','आपके खाते में सेव है','Disimpan dalam akaun anda'],
+'এখনো সেভ হয়নি (ইন্টারনেট নেই)। নেট এলে নিজে সেভ হবে।':['Not saved online yet (offline). It will sync when you are back online.','لم يتم الحفظ بعد (لا يوجد إنترنت). سيتم تلقائيًا عند عودة الاتصال.','अभी ऑनलाइन सेव नहीं हुआ (इंटरनेट नहीं)। नेट आने पर अपने-आप हो जाएगा।','Belum disimpan dalam talian. Akan disegerakkan apabila ada internet.'],
+'অ্যাকাউন্ট মুছুন':['Delete account','حذف الحساب','खाता हटाएँ','Padam akaun'],
+'অ্যাকাউন্ট ও সব হিসাব চিরতরে মুছে যাবে। নিশ্চিত?':['Your account and all entries will be deleted forever. Are you sure?'],
+'নিরাপত্তার জন্য আবার লগইন করে তারপর মুছুন।':['For security, log in again and then delete.'],
+'কিছু হিসাব এখনো অনলাইনে সেভ হয়নি। এখন লগআউট করলে সেগুলো হারাতে পারে। এগোবেন?':['Some entries are not saved online yet. Logging out now may lose them. Continue?']
+});
+const K_OK='আপনার অ্যাকাউন্টে সেভ হয়েছে',K_OFF='এখনো সেভ হয়নি (ইন্টারনেট নেই)। নেট এলে নিজে সেভ হবে।',K_ERR='কিছু ভুল হয়েছে। একটু পরে আবার চেষ্টা করুন।',K_BAD='ইমেইল বা পাসওয়ার্ড ভুল।';
+const MSG={'auth/invalid-credential':K_BAD,'auth/wrong-password':K_BAD,'auth/user-not-found':K_BAD,'auth/invalid-email':'সঠিক ইমেইল ঠিকানা দিন।','auth/email-already-in-use':'এই ইমেইলে আগেই অ্যাকাউন্ট আছে। লগইন করুন।','auth/weak-password':'পাসওয়ার্ড খুব সহজ। কমপক্ষে ৬ অক্ষর দিন।','auth/network-request-failed':'ইন্টারনেট নেই বা দুর্বল। আবার চেষ্টা করুন।','auth/too-many-requests':'অনেকবার চেষ্টা হয়েছে। কিছুক্ষণ পরে আবার চেষ্টা করুন।'};
+const E=t=>{$('lerr').textContent=T(t)};
+
+// login screen switches to real email login
+document.querySelector('label[for=lid]').textContent='ইমেইল';
+$('lid').type='email';$('lid').setAttribute('autocomplete','email');
+const nt=document.querySelector('#login .note');if(nt)nt.style.display='none';
+const sy=document.createElement('small');sy.id='sy';sy.className='note';sy.style.cssText='display:block;text-align:center;margin-top:12px';
+document.querySelector('.bk').before(sy);
+const st=k=>{sy.textContent=k?T(k):''};
+const fp=document.createElement('button');fp.className='out';fp.style.marginTop='12px';fp.textContent='পাসওয়ার্ড ভুলে গেছেন?';$('lgo').after(fp);
+const _sm=setMode;setMode=function(m){_sm(m);fp.style.display=m==='login'?'block':'none'};setMode(mode);
+const dl=document.createElement('button');dl.className='out';dl.id='dl';dl.style.cssText='border-color:var(--exp);color:var(--exp)';dl.textContent='অ্যাকাউন্ট মুছুন';$('lo').after(dl);
+tr(document.body);
+
+// compact encoding keeps the single cloud document small (about 15,000 entries fit)
+const enc=()=>JSON.stringify(S.tx.map(t=>[t.id,t.type==='income'?1:0,t.amt,(i=>i>=0&&i<BL[t.type]?i:t.cat)(CATS[t.type].indexOf(t.cat)),t.date,t.note||'']));
+const dec=s=>{const o=[];try{JSON.parse(s).forEach(a=>{const ty=a[1]?'income':'expense',c=typeof a[3]==='string'?useCat(ty,a[3]):CATS[ty][a[3]];if(c&&a[2]>0&&/^\d{4}-\d{2}-\d{2}$/.test(a[4]))o.push({id:a[0],type:ty,amt:+a[2],cat:c,note:String(a[5]||'').slice(0,80),date:a[4]})})}catch(e){}return o};
+const cur=x=>CUR.some(y=>y[0]===x)?x:S.cur;
+const _save=save;let t1=null;
+async function push(){
+  const u=auth.currentUser;if(!u)return true;
+  try{await F.setDoc(F.doc(db,'users',u.uid),{d:enc(),cx:S.cx,cur:S.cur,upd:S.upd||Date.now(),name:u.displayName||''});S.syn=S.upd;_save();st(K_OK);return true}
+  catch(e){st(K_OFF);return false}}
+save=function(){if(auth.currentUser)S.upd=Date.now();_save();if(auth.currentUser){clearTimeout(t1);t1=setTimeout(push,1500)}};
+async function sync(u){
+  let c=null;
+  try{const s=await F.getDoc(F.doc(db,'users',u.uid));c=s.exists()?s.data():null}catch(e){st(K_OFF);return}
+  const own=S.uid===u.uid;let need=true;
+  if(c){const ct=dec(c.d||'[]'),cu=c.upd||0;['expense','income'].forEach(ty=>((c.cx||{})[ty]||[]).forEach(n=>useCat(ty,n)));
+    if(own){if(cu>(S.upd||0)){S.tx=ct;S.cur=cur(c.cur);S.upd=S.syn=cu;need=false}else if(cu===(S.upd||0))need=false}
+    else if(!S.uid&&S.tx.length){const ids=new Set(ct.map(t=>t.id));S.tx=[...ct,...S.tx.filter(t=>!ids.has(t.id))];S.upd=Date.now()}
+    else{S.tx=ct;S.cur=cur(c.cur);S.upd=S.syn=cu;need=false}
+  }else{if(S.uid&&!own)S.tx=[];S.upd=Date.now()}
+  S.uid=u.uid;_save();render();
+  if(need)await push();else st(K_OK)}
+
+$('lgo').onclick=async()=>{
+  const id=$('lid').value.trim(),pw=$('lpw').value,nm=$('lname').value.trim(),b=$('lgo');
+  if(mode==='signup'&&!nm)return E('আপনার নাম লিখুন।');
+  if(!/^\S+@\S+\.\S+$/.test(id))return E('সঠিক ইমেইল ঠিকানা দিন।');
+  if(pw.length<6)return E('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের দিন।');
+  b.disabled=true;E('');
+  try{
+    if(mode==='signup'){const r=await Au.createUserWithEmailAndPassword(auth,id,pw);await Au.updateProfile(r.user,{displayName:nm});if(U){U={...U,name:nm};try{localStorage.setItem('hisab_u',JSON.stringify(U))}catch(e){}hello()}}
+    else await Au.signInWithEmailAndPassword(auth,id,pw);
+  }catch(e){E(MSG[e.code]||K_ERR)}
+  b.disabled=false};
+fp.onclick=async()=>{const id=$('lid').value.trim();if(!id)return E('প্রথমে উপরের ঘরে আপনার ইমেইল লিখুন।');
+  try{await Au.sendPasswordResetEmail(auth,id);E('পাসওয়ার্ড রিসেটের ইমেইল পাঠানো হয়েছে। ইনবক্স (স্প্যামসহ) দেখুন।')}catch(e){E(MSG[e.code]||K_ERR)}};
+const wipe=()=>{S.tx=[];S.uid=null;S.upd=0;S.syn=0;S.cx={expense:[],income:[]};['expense','income'].forEach(ty=>CATS[ty].splice(BL[ty]));_save()};
+$('lo').onclick=async()=>{
+  if(auth.currentUser&&S.syn!==S.upd&&S.tx.length){if(!(await push())&&!confirm(T('কিছু হিসাব এখনো অনলাইনে সেভ হয়নি। এখন লগআউট করলে সেগুলো হারাতে পারে। এগোবেন?')))return}
+  try{await Au.signOut(auth)}catch(e){}
+  wipe();try{localStorage.removeItem('hisab_in')}catch(e){}
+  setMode('login');go('welcome');render();st('')};
+dl.onclick=async()=>{const u=auth.currentUser;if(!u||!confirm(T('অ্যাকাউন্ট ও সব হিসাব চিরতরে মুছে যাবে। নিশ্চিত?')))return;
+  try{await F.deleteDoc(F.doc(db,'users',u.uid));await Au.deleteUser(u)}
+  catch(e){await push();alert(T(e.code==='auth/requires-recent-login'?'নিরাপত্তার জন্য আবার লগইন করে তারপর মুছুন।':K_ERR));return}
+  wipe();U=null;try{localStorage.removeItem('hisab_in');localStorage.removeItem('hisab_u')}catch(e){}
+  setMode('signup');go('welcome');render();st('')};
+
+Au.onAuthStateChanged(auth,async u=>{
+  if(u){U={name:u.displayName||(u.email||'').split('@')[0],id:u.email,uid:u.uid};
+    try{localStorage.setItem('hisab_u',JSON.stringify(U));localStorage.setItem('hisab_in','1')}catch(e){}
+    if(document.body.dataset.s!=='app')enter();else hello();
+    await sync(u)}
+  else{try{localStorage.removeItem('hisab_in')}catch(e){}if(document.body.dataset.s==='app')go('welcome')}});
+addEventListener('online',()=>{if(auth.currentUser)sync(auth.currentUser)});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&auth.currentUser)sync(auth.currentUser)});
+})();
+</script>
 </body>
 </html>
