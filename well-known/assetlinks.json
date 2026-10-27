@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.bdstylex.twa",
+        "sha256_cert_fingerprints": ["6B:AC:25:75:D9:F0:E3:33:3F:BD:3A:1C:07:AD:56:C7:88:69:CB:1C:CD:84:23:20:64:D9:CB:7C:CA:DE:9A:45"]
+      }
+    }]
